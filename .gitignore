@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Env & secrets — NEVER COMMIT
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+*.pem
+*.key
+credentials*.json
+service-account*.json
+
+# macOS
+.DS_Store
+._*
+
+# Project
+benchmark_results.json
+benchmark_run.log
+scratch/
+.antigravitycli/
+.playwright-mcp/
+dashboard-*.png
+.streamlit/secrets.toml
