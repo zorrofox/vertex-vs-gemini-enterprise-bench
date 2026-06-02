@@ -119,8 +119,8 @@ curl -N http://localhost:8000/v1/chat/completions \
 | Answer quality (Judge, /5) | 4.46 | **4.54** (statistically tied) |
 | TTFT | **6.30s** | 8.73s (+38%) |
 | End-to-end latency | **7.53s** | 14.00s (+86%) |
-| In-quota cost/query | $0.037 | **$0.006** (Standard seat, 6× cheaper) |
-| Overage cost/query | — | $0.10 (2.7× **more expensive** than Vertex) |
+| In-quota cost/query | $0.040 | **$0.006** (Standard seat, 6× cheaper) |
+| Overage cost/query | — | $0.10 (2.5× **more expensive** than Vertex) |
 | Multimodal output | Text only (separate APIs for Imagen/Veo/Code) | **Text + image + code-exec + file in one endpoint** |
 
 **Bottom line:** Same Google Search, same answer quality. Vertex is **fast & elastic** — pick it for products and APIs. Gemini Enterprise is **slower but 6× cheaper within quota and natively multimodal** — pick it for internal employee tooling with predictable headcount.

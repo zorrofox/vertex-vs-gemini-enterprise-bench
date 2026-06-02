@@ -99,7 +99,7 @@
 | Search-injected input tokens | **Not charged** |
 | Rate limit | 30,000 RPM/model/region; Flash Tier 3 = 10M TPM (auto-tiered by 30-day spend) |
 
-**Typical real-time Q&A** (50 in / 800 out tokens): ≈ **$0.037/query**
+**Typical real-time Q&A** (measured ~30 in / ~2100 out tokens): $0.035 grounding + $0.005 tokens ≈ **$0.040/query**
 
 ### 4.2 Gemini Enterprise (Seat subscription + pooled quota)
 
@@ -131,18 +131,18 @@
 
 ## 5. Cost Model
 
-### 5.1 Three-Zone Break-Even (1 Standard $30 seat vs. Vertex $0.037/query)
+### 5.1 Three-Zone Break-Even (1 Standard $30 seat vs. Vertex $0.040/query)
 
 | Monthly queries Q | GE cost | Vertex cost | Winner |
 |-------------------|---------|-------------|--------|
-| Q < **811** | $30 (idle seat) | $0.037 × Q | **Vertex** (seat fee not amortized) |
-| 811 ≤ Q ≤ 4,800 | $30 | $30 – $178 | **GE** (up to 5.9× cheaper) |
-| 4,800 < Q ≤ 7,143 | $30 + (Q−4800)×$0.10 | $178 – $264 | **GE** (margin shrinking) |
-| Q > **7,143** | overage-dominated | $0.037 × Q | **Vertex** (GE overage = 2.7× Vertex) |
+| Q < **750** | $30 (idle seat) | $0.040 × Q | **Vertex** (seat fee not amortized) |
+| 750 ≤ Q ≤ 4,800 | $30 | $30 – $192 | **GE** (up to 6.4× cheaper) |
+| 4,800 < Q ≤ 7,500 | $30 + (Q−4800)×$0.10 | $192 – $300 | **GE** (margin shrinking) |
+| Q > **7,500** | overage-dominated | $0.040 × Q | **Vertex** (GE overage = 2.5× Vertex) |
 
 ### 5.2 Multi-Seat Scenario
 
-With seats sized to peak demand, GE **marginal cost stays at $0.00583–$0.00625** — 5.9–6.3× cheaper than Vertex. Trade-offs: seats cannot be reduced mid-term, idle seats are sunk cost, and bursts above quota hit $0.10 overage.
+With seats sized to peak demand, GE **marginal cost stays at $0.00583–$0.00625** — 6.4–6.9× cheaper than Vertex. Trade-offs: seats cannot be reduced mid-term, idle seats are sunk cost, and bursts above quota hit $0.10 overage.
 
 ---
 
@@ -152,17 +152,17 @@ With seats sized to peak demand, GE **marginal cost stays at $0.00583–$0.00625
 |----------|---------------|-----|
 | Internal employees, 30–160 queries/day/person | **GE Standard/Business** | Quota covers usage; $0.006/query, 6× cheaper |
 | Programmatic API / external product / spiky traffic | **Vertex** | Fully elastic, no sunk seats, no overage penalty, no 600 QPM cap |
-| Low frequency (< 27 queries/day/seat) | **Vertex** | GE seat fee doesn't amortize |
+| Low frequency (< 25 queries/day/seat) | **Vertex** | GE seat fee doesn't amortize |
 | Latency-sensitive (TTFT < 5s hard requirement) | **Vertex** | GE measured +38% TTFT, +86% E2E |
 | Need image/video/code-exec/Deep Research in one call | **GE Plus** | Single-endpoint orchestration; Vertex requires separate Imagen/Veo/CodeExec calls and billing |
 | Need agent reasoning trace, session memory, VPC-SC/CMEK | **GE** | Native support |
-| Need real-time web info at minimal cost (< 1,500/day) | **Vertex** | Within free grounding tier ≈ $0.002/query (tokens only) |
+| Need real-time web info at minimal cost (< 1,500/day) | **Vertex** | Within free grounding tier ≈ $0.005/query (tokens only) |
 
 ---
 
 ## 7. Bottom Line
 
-**Both paths hit the same Google Search — answer quality is a wash.** Vertex is the **fast, elastic, metered** developer API. Gemini Enterprise is the **slower (≈2×), seat-based, natively multimodal** employee assistant. Inside quota GE is 6× cheaper; outside quota GE is 2.7× more expensive. Choose based on whether you're **building a product** (Vertex) or **equipping a workforce** (GE).
+**Both paths hit the same Google Search — answer quality is a wash.** Vertex is the **fast, elastic, metered** developer API. Gemini Enterprise is the **slower (≈2×), seat-based, natively multimodal** employee assistant. Inside quota GE is 6× cheaper; outside quota GE is 2.5× more expensive. Choose based on whether you're **building a product** (Vertex) or **equipping a workforce** (GE).
 
 ---
 
