@@ -195,4 +195,3 @@ python scripts/render_charts.py
 - [Gemini Enterprise StreamAssist Guide](https://docs.cloud.google.com/gemini/enterprise/docs/get-answers-from-streamassist)
 - [AssistAnswer REST Reference](https://docs.cloud.google.com/generative-ai-app-builder/docs/reference/rest/v1/projects.locations.collections.engines.sessions.assistAnswers)
 - [Gemini Enterprise Licenses & Pooled Quotas](https://docs.cloud.google.com/gemini/enterprise/docs/licenses)
-- Gemini Enterprise internal quota deck (per-seat daily quotas & overage pricing)
