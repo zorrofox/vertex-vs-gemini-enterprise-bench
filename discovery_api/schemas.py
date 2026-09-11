@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChatMessage(BaseModel):
@@ -46,3 +46,29 @@ def convert_to_gcp_contents(
         elif msg.role in ("assistant", "model"):
             contents.append({"role": "model", "parts": [{"text": msg.content}]})
     return contents, system
+
+
+# ---------- 媒体生成（Gemini Enterprise 生图 / 生视频） ----------
+
+
+class ImageGenerationRequest(BaseModel):
+    """OpenAI Images API 请求子集。GE 侧无 size/quality 等参数，仅透传 prompt。"""
+
+    model: str
+    prompt: str = Field(min_length=1)
+    n: int = 1
+    response_format: str = "b64_json"  # "b64_json" | "url"
+    size: str | None = None  # 接受但忽略：GE ImageGenerationSpec 无参数
+
+
+class VideoGenerationRequest(BaseModel):
+    """OpenAI Videos API 请求子集。GE 侧时长/尺寸不可控。"""
+
+    model: str
+    prompt: str = Field(min_length=1)
+    seconds: int | None = None  # 接受但忽略
+    size: str | None = None  # 接受但忽略
+
+
+IMAGE_MODELS: dict[str, str] = {"discovery-image": "agent_search"}
+VIDEO_MODELS: dict[str, str] = {"discovery-video": "agent_search"}

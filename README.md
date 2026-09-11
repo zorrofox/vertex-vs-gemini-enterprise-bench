@@ -27,7 +27,7 @@ The suite measures **latency** (TTFT / E2E), **answer quality** (LLM-as-a-Judge:
                                                └─────────────────────────────┘
 ```
 
-- **`app.py`** — FastAPI server exposing `/v1/chat/completions` (OpenAI wire format). Routes requests to either backend based on the `model` field.
+- **`app.py`** — FastAPI server exposing `/v1/chat/completions`, `/v1/images/generations` and `/v1/videos` (OpenAI wire format). Routes requests to either backend based on the `model` field.
 - **`benchmark.py`** — Runs 8 time-sensitive questions against all 4 channels, then grades answers via a 2-stage LLM-as-a-Judge (live ground-truth fetch + structured scoring).
 - **`dashboard.py`** — Streamlit UI: live 4-way streaming arena + Plotly analytics over benchmark results.
 - **`discovery_api/`** — Core library (config, auth with token caching, SSE parsing, citation extraction, handlers).
@@ -40,6 +40,15 @@ The suite measures **latency** (TTFT / E2E), **answer quality** (LLM-as-a-Judge:
 | `vertex-grounded-search` | Vertex AI | ✅ |
 | `discovery-standard` | Gemini Enterprise `:streamAssist` | ❌ |
 | `discovery-grounded-search` | Gemini Enterprise `:streamAssist` | ✅ |
+
+### Media generation (Gemini Enterprise only)
+
+| Endpoint | `model` | Backend | Notes |
+|----------|---------|---------|-------|
+| `POST /v1/images/generations` | `discovery-image` | GE `:streamAssist` + `imageGenerationSpec` | Synchronous, ~40 s. `response_format`: `b64_json` (default) or `url` |
+| `POST /v1/videos` → `GET /v1/videos/{id}` → `GET /v1/videos/{id}/content` | `discovery-video` | GE `:streamAssist` + `videoGenerationSpec` | Async job, ~90–120 s, returns 8 s 720p MP4 |
+
+Both follow the OpenAI Images / Videos API shapes, so existing OpenAI clients work unchanged. Gemini Enterprise exposes **no** generation parameters (`size`, `seconds`, aspect ratio are accepted but ignored) — the model (Nano Banana / Veo) is chosen by the GE app. Generated files live in a GE session; the proxy fetches them through the (undocumented) `{session}:downloadFile` endpoint, which is why `url` mode returns a proxy URL (`/v1/media/{session_id}/{file_id}`) rather than a Google URL. Video jobs are kept in process memory — restart the proxy and they are gone.
 
 ---
 
@@ -90,6 +99,22 @@ curl -N http://localhost:8000/v1/chat/completions \
   }'
 ```
 
+```bash
+# Image → PNG file
+curl -s http://localhost:8000/v1/images/generations \
+  -H "Content-Type: application/json" \
+  -d '{"model": "discovery-image", "prompt": "A watercolor lighthouse at dawn"}' \
+  | python3 -c "import sys,json,base64; open('out.png','wb').write(base64.b64decode(json.load(sys.stdin)['data'][0]['b64_json']))"
+
+# Video → async job
+curl -s -X POST http://localhost:8000/v1/videos \
+  -H "Content-Type: application/json" \
+  -d '{"model": "discovery-video", "prompt": "Aerial shot over a pine forest in morning fog"}'
+# → {"id": "video_…", "status": "queued", ...}
+curl -s http://localhost:8000/v1/videos/video_…            # poll until "status": "completed"
+curl -s http://localhost:8000/v1/videos/video_…/content -o out.mp4
+```
+
 ---
 
 ## Configuration (`.env`)
@@ -105,6 +130,7 @@ curl -N http://localhost:8000/v1/chat/completions \
 | `AGENT_SEARCH_ASSISTANT` | Assistant ID, default `default_assistant` |
 | `AGENT_SEARCH_MODEL_VERSION` | GE `generationSpec.modelId` (leave empty to use app default) |
 | `GCP_AUTH_SOURCE` | `gcloud` (CLI active account, default) or `adc` |
+| `GCP_AUTH_ACCOUNT` | Optional gcloud account to use instead of the active one (multi-account machines) |
 | `PROXY_PORT` | Proxy listen port, default `8000` |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 
@@ -143,7 +169,11 @@ Full methodology, per-question breakdown, and pricing model: **[docs/vertex-vs-g
 │   ├── sse.py              # SSE parser + OpenAI chunk factory
 │   ├── citations.py        # Grounding citation extraction
 │   ├── handlers.py         # Vertex AI backend
-│   └── agent_search.py     # Gemini Enterprise :streamAssist backend
+│   ├── agent_search.py     # Gemini Enterprise :streamAssist backend
+│   ├── media.py            # GE image/video generation + session file download
+│   ├── media_routes.py     # OpenAI-shaped /v1/images, /v1/videos, /v1/media routes
+│   └── video_jobs.py       # In-memory async video job store
+├── tests/                  # pytest (unit + route tests, GE calls mocked)
 ├── scripts/
 │   ├── list_engines.py     # Discover Agentspace engines in a project
 │   └── render_charts.py    # Export benchmark charts as PNG
@@ -162,7 +192,7 @@ This repo lives under the GTM org — contributions go through PRs:
 
 1. Fork / branch from `main`
 2. `cp .env.example .env` and fill in **your own** project — never commit real project IDs
-3. Run `python -m py_compile app.py discovery_api/*.py` and a smoke test before pushing
+3. Run `python -m pytest tests` and a smoke test before pushing
 4. Open a PR; do **not** include `benchmark_results.json`, `.env`, or any file containing project IDs / tokens
 
 ---

@@ -10,6 +10,7 @@ from discovery_api.agent_search import agent_search_stream, agent_search_unary
 from discovery_api.auth import get_gcp_access_token
 from discovery_api.config import settings
 from discovery_api.handlers import vertex_stream, vertex_unary
+from discovery_api.media_routes import router as media_router
 from discovery_api.schemas import MODEL_ROUTES, ChatCompletionRequest, convert_to_gcp_contents
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -24,6 +25,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="GCP Discovery & Vertex AI OpenAI Proxy", lifespan=lifespan)
+
+app.include_router(media_router)
 
 app.add_middleware(
     CORSMiddleware,

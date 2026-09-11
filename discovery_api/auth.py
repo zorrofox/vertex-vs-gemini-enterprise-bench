@@ -29,16 +29,21 @@ class TokenCache:
         self._creds: Credentials | None = None
         self._creds_expiry: float = 0.0
         self._prefer_cli = os.getenv("GCP_AUTH_SOURCE", "gcloud") == "gcloud"
+        # 可选：指定 gcloud 账号（多账号机器上 active account 可能不是项目所属账号）
+        self._cli_account = os.getenv("GCP_AUTH_ACCOUNT", "").strip()
 
     def _from_gcloud_cli(self) -> Credentials | None:
         try:
-            res = subprocess.run(
-                ["gcloud", "auth", "print-access-token"],
-                capture_output=True, text=True, check=True, timeout=15,
-            )
+            cmd = ["gcloud", "auth", "print-access-token"]
+            if self._cli_account:
+                cmd.append(f"--account={self._cli_account}")
+            res = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=15)
             token = res.stdout.strip()
             if token:
-                logger.info("Obtained access token from gcloud CLI active account")
+                logger.info(
+                    "Obtained access token from gcloud CLI (%s)",
+                    self._cli_account or "active account",
+                )
                 return Credentials(token)
         except Exception as e:
             logger.warning("gcloud CLI token fetch failed: %s", e)
